@@ -39,7 +39,7 @@ export default function CodeEditor({
       viewRef.current = null;
       setIsReady(false);
     };
-  }, []);
+  }, [file.id, language, onChange, onCursorPositionChange]); // Add file.id to force re-mount on file change
 
   // Update content when file changes
   useEffect(() => {
@@ -57,24 +57,7 @@ export default function CodeEditor({
     }
   }, [file.content, isReady]);
 
-  // Update language when it changes
-  useEffect(() => {
-    if (!viewRef.current || !isReady) return;
-    
-    // Language changes require a full re-setup
-    const currentContent = viewRef.current.state.doc.toString();
-    viewRef.current.destroy();
-    
-    const view = setupEditor({
-      parent: editorRef.current!,
-      doc: currentContent,
-      language,
-      onChange,
-      onCursorChange: onCursorPositionChange,
-    });
-    
-    viewRef.current = view;
-  }, [language, onChange, onCursorPositionChange, isReady]);
+  // No need for separate language effect since we recreate editor on file change
 
   return (
     <div className="h-full w-full">
