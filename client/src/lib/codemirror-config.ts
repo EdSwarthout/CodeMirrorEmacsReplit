@@ -94,13 +94,8 @@ export function setupEditor({
     ],
   });
 
-  const view = new EditorView({
+  return new EditorView({
     state,
     parent,
   });
-
-  // Auto-focus the editor
-  setTimeout(() => view.focus(), 0);
-  
-  return view;
 }

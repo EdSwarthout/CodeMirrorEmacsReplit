@@ -35,10 +35,9 @@ export default function CodeEditor({
   useEffect(() => {
     if (!editorRef.current) return;
     
-    const needsRecreate = 
-      !viewRef.current || 
-      currentFileIdRef.current !== file.id || 
-      currentLanguageRef.current !== language;
+    const isFileChange = currentFileIdRef.current !== file.id;
+    const isLanguageChange = currentLanguageRef.current !== language;
+    const needsRecreate = !viewRef.current || isFileChange || isLanguageChange;
 
     if (needsRecreate) {
       // Store current cursor position if editor exists
@@ -63,8 +62,8 @@ export default function CodeEditor({
       currentLanguageRef.current = language;
       setIsReady(true);
 
-      // Restore cursor position and focus if this was a language change, not file change
-      if (needsRecreate && currentFileIdRef.current === file.id && hasFocus) {
+      // Only restore cursor position if this was a language change for the same file
+      if (isLanguageChange && !isFileChange && hasFocus && cursorPos > 0) {
         setTimeout(() => {
           if (viewRef.current) {
             const pos = Math.min(cursorPos, view.state.doc.length);
@@ -92,9 +91,7 @@ export default function CodeEditor({
     
     const currentContent = viewRef.current.state.doc.toString();
     if (currentContent !== file.content) {
-      const cursorPos = viewRef.current.state.selection.main.head;
-      const hasFocus = viewRef.current.hasFocus;
-      
+      // Only update content without cursor changes - let CodeMirror handle cursor naturally
       viewRef.current.dispatch({
         changes: {
           from: 0,
@@ -102,19 +99,6 @@ export default function CodeEditor({
           insert: file.content,
         },
       });
-
-      // Restore cursor position and focus
-      if (hasFocus) {
-        setTimeout(() => {
-          if (viewRef.current) {
-            const pos = Math.min(cursorPos, viewRef.current.state.doc.length);
-            viewRef.current.dispatch({
-              selection: { anchor: pos, head: pos },
-            });
-            viewRef.current.focus();
-          }
-        }, 0);
-      }
     }
   }, [file.content, isReady]);
 
