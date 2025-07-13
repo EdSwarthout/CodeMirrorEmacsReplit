@@ -39,8 +39,8 @@ A powerful web-based code editor with Emacs keybindings, built with React, Expre
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/codemirror-emacs-editor.git
-cd codemirror-emacs-editor
+git clone https://github.com/EdSwarthout/CodeMirrorEmacsReplit.git
+cd CodeMirrorEmacsReplit
 ```
 
 2. Install dependencies:
