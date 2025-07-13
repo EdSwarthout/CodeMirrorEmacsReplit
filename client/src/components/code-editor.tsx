@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { EditorView } from "codemirror";
 import { setupEditor } from "@/lib/codemirror-config";
 import type { File } from "@shared/schema";
@@ -19,34 +19,82 @@ export default function CodeEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const currentFileIdRef = useRef<number | null>(null);
+  const currentLanguageRef = useRef<string>("");
 
+  // Stable onChange callback to prevent unnecessary re-renders
+  const stableOnChange = useCallback((content: string) => {
+    onChange(content);
+  }, [onChange]);
+
+  const stableOnCursorChange = useCallback((line: number, col: number) => {
+    onCursorPositionChange(line, col);
+  }, [onCursorPositionChange]);
+
+  // Initialize or recreate editor only when file or language changes
   useEffect(() => {
     if (!editorRef.current) return;
+    
+    const needsRecreate = 
+      !viewRef.current || 
+      currentFileIdRef.current !== file.id || 
+      currentLanguageRef.current !== language;
 
-    const view = setupEditor({
-      parent: editorRef.current,
-      doc: file.content,
-      language,
-      onChange,
-      onCursorChange: onCursorPositionChange,
-    });
+    if (needsRecreate) {
+      // Store current cursor position if editor exists
+      let cursorPos = 0;
+      let hasFocus = false;
+      if (viewRef.current) {
+        cursorPos = viewRef.current.state.selection.main.head;
+        hasFocus = viewRef.current.hasFocus;
+        viewRef.current.destroy();
+      }
 
-    viewRef.current = view;
-    setIsReady(true);
+      const view = setupEditor({
+        parent: editorRef.current,
+        doc: file.content,
+        language,
+        onChange: stableOnChange,
+        onCursorChange: stableOnCursorChange,
+      });
+
+      viewRef.current = view;
+      currentFileIdRef.current = file.id;
+      currentLanguageRef.current = language;
+      setIsReady(true);
+
+      // Restore cursor position and focus if this was a language change, not file change
+      if (needsRecreate && currentFileIdRef.current === file.id && hasFocus) {
+        setTimeout(() => {
+          if (viewRef.current) {
+            const pos = Math.min(cursorPos, view.state.doc.length);
+            view.dispatch({
+              selection: { anchor: pos, head: pos },
+            });
+            view.focus();
+          }
+        }, 0);
+      }
+    }
 
     return () => {
-      view.destroy();
-      viewRef.current = null;
-      setIsReady(false);
+      if (viewRef.current) {
+        viewRef.current.destroy();
+        viewRef.current = null;
+        setIsReady(false);
+      }
     };
-  }, [file.id, language, onChange, onCursorPositionChange]); // Add file.id to force re-mount on file change
+  }, [file.id, file.content, language, stableOnChange, stableOnCursorChange]);
 
-  // Update content when file changes
+  // Update content when file content changes (but same file)
   useEffect(() => {
-    if (!viewRef.current || !isReady) return;
+    if (!viewRef.current || !isReady || currentFileIdRef.current !== file.id) return;
     
     const currentContent = viewRef.current.state.doc.toString();
     if (currentContent !== file.content) {
+      const cursorPos = viewRef.current.state.selection.main.head;
+      const hasFocus = viewRef.current.hasFocus;
+      
       viewRef.current.dispatch({
         changes: {
           from: 0,
@@ -54,10 +102,21 @@ export default function CodeEditor({
           insert: file.content,
         },
       });
+
+      // Restore cursor position and focus
+      if (hasFocus) {
+        setTimeout(() => {
+          if (viewRef.current) {
+            const pos = Math.min(cursorPos, viewRef.current.state.doc.length);
+            viewRef.current.dispatch({
+              selection: { anchor: pos, head: pos },
+            });
+            viewRef.current.focus();
+          }
+        }, 0);
+      }
     }
   }, [file.content, isReady]);
-
-  // No need for separate language effect since we recreate editor on file change
 
   return (
     <div className="h-full w-full">

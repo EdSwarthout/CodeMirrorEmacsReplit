@@ -76,12 +76,31 @@ export function setupEditor({
         ".cm-scroller": {
           fontFamily: "'JetBrains Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace",
         },
+        ".cm-cursor": {
+          borderLeftColor: "var(--primary)",
+          borderLeftWidth: "2px",
+        },
+        ".cm-dropCursor": {
+          borderLeftColor: "var(--primary)",
+        },
+      }),
+      // Auto-focus extension
+      EditorView.domEventHandlers({
+        focus: (event, view) => {
+          // Ensure cursor is visible when editor gains focus
+          return false;
+        },
       }),
     ],
   });
 
-  return new EditorView({
+  const view = new EditorView({
     state,
     parent,
   });
+
+  // Auto-focus the editor
+  setTimeout(() => view.focus(), 0);
+  
+  return view;
 }
