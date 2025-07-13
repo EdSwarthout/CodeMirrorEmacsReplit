@@ -1,4 +1,6 @@
 import { files, editorSettings, type File, type InsertFile, type EditorSettings, type InsertEditorSettings } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // File operations
@@ -14,142 +16,84 @@ export interface IStorage {
   updateSettings(settings: InsertEditorSettings): Promise<EditorSettings>;
 }
 
-export class MemStorage implements IStorage {
-  private files: Map<number, File>;
-  private settings: EditorSettings | null;
-  private currentFileId: number;
-  private currentSettingsId: number;
-
-  constructor() {
-    this.files = new Map();
-    this.settings = null;
-    this.currentFileId = 1;
-    this.currentSettingsId = 1;
-    
-    // Initialize with sample files
-    this.createFile({
-      name: "index.js",
-      content: `// Welcome to CodeMirror Emacs Editor
-function greetUser(name) {
-    const message = \`Hello, \${name}!\`;
-    console.log(message);
-    return message;
-}
-
-// Example usage
-greetUser('World');`,
-      language: "javascript",
-      path: "/index.js"
-    });
-    
-    this.createFile({
-      name: "styles.css",
-      content: `/* Sample CSS file */
-body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f9fafb;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}`,
-      language: "css",
-      path: "/styles.css"
-    });
-    
-    this.createFile({
-      name: "README.md",
-      content: `# CodeMirror Emacs Editor
-
-A powerful web-based code editor with Emacs keybindings.
-
-## Features
-
-- CodeMirror 6 integration
-- Emacs keybindings
-- Multiple language support
-- File management
-- Customizable settings
-
-## Usage
-
-Use Emacs keybindings for efficient text editing:
-- \`Ctrl+x Ctrl+s\` - Save file
-- \`Ctrl+x Ctrl+f\` - Open file
-- \`Ctrl+x k\` - Close file
-- \`Ctrl+g\` - Cancel operation`,
-      language: "markdown",
-      path: "/README.md"
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   async getFiles(): Promise<File[]> {
-    return Array.from(this.files.values());
+    return await db.select().from(files);
   }
 
   async getFile(id: number): Promise<File | undefined> {
-    return this.files.get(id);
+    const [file] = await db.select().from(files).where(eq(files.id, id));
+    return file || undefined;
   }
 
   async getFileByPath(path: string): Promise<File | undefined> {
-    return Array.from(this.files.values()).find(file => file.path === path);
+    const [file] = await db.select().from(files).where(eq(files.path, path));
+    return file || undefined;
   }
 
   async createFile(insertFile: InsertFile): Promise<File> {
-    const id = this.currentFileId++;
-    const file: File = { 
-      id,
-      name: insertFile.name,
-      content: insertFile.content || "",
-      language: insertFile.language || "javascript",
-      path: insertFile.path
-    };
-    this.files.set(id, file);
+    const [file] = await db
+      .insert(files)
+      .values(insertFile)
+      .returning();
     return file;
   }
 
   async updateFile(id: number, content: string): Promise<File | undefined> {
-    const file = this.files.get(id);
-    if (!file) return undefined;
-    
-    const updatedFile = { ...file, content };
-    this.files.set(id, updatedFile);
-    return updatedFile;
+    const [file] = await db
+      .update(files)
+      .set({ content })
+      .where(eq(files.id, id))
+      .returning();
+    return file || undefined;
   }
 
   async deleteFile(id: number): Promise<boolean> {
-    return this.files.delete(id);
+    const result = await db.delete(files).where(eq(files.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async getSettings(): Promise<EditorSettings | undefined> {
-    if (!this.settings) {
-      this.settings = {
-        id: this.currentSettingsId,
-        theme: "light",
-        fontSize: 14,
-        lineNumbers: true,
-        wordWrap: false,
-        emacsMode: true
-      };
+    const [settings] = await db.select().from(editorSettings).limit(1);
+    
+    if (!settings) {
+      // Create default settings if none exist
+      const [newSettings] = await db
+        .insert(editorSettings)
+        .values({
+          theme: "light",
+          fontSize: 14,
+          lineNumbers: true,
+          wordWrap: false,
+          emacsMode: true
+        })
+        .returning();
+      return newSettings;
     }
-    return this.settings;
+    
+    return settings;
   }
 
-  async updateSettings(settings: InsertEditorSettings): Promise<EditorSettings> {
-    this.settings = {
-      id: this.currentSettingsId,
-      theme: settings.theme || "light",
-      fontSize: settings.fontSize || 14,
-      lineNumbers: settings.lineNumbers !== undefined ? settings.lineNumbers : true,
-      wordWrap: settings.wordWrap !== undefined ? settings.wordWrap : false,
-      emacsMode: settings.emacsMode !== undefined ? settings.emacsMode : true
-    };
-    return this.settings;
+  async updateSettings(settingsData: InsertEditorSettings): Promise<EditorSettings> {
+    // First try to update existing settings
+    const [existingSettings] = await db.select().from(editorSettings).limit(1);
+    
+    if (existingSettings) {
+      const [updatedSettings] = await db
+        .update(editorSettings)
+        .set(settingsData)
+        .where(eq(editorSettings.id, existingSettings.id))
+        .returning();
+      return updatedSettings;
+    } else {
+      // Create new settings if none exist
+      const [newSettings] = await db
+        .insert(editorSettings)
+        .values(settingsData)
+        .returning();
+      return newSettings;
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

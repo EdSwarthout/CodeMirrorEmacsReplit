@@ -27,10 +27,10 @@ Preferred communication style: Simple, everyday language.
 - **Build**: ESBuild for server bundling
 
 ### Data Storage
-- **Database**: PostgreSQL configured via Drizzle ORM
+- **Database**: PostgreSQL with Drizzle ORM (active)
 - **Connection**: Neon Database serverless adapter
 - **Schema**: Files and editor settings tables
-- **Fallback**: In-memory storage implementation for development
+- **Implementation**: Full database storage replacing in-memory fallback
 
 ## Key Components
 
