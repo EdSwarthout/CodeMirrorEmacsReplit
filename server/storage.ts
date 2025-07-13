@@ -101,7 +101,13 @@ Use Emacs keybindings for efficient text editing:
 
   async createFile(insertFile: InsertFile): Promise<File> {
     const id = this.currentFileId++;
-    const file: File = { ...insertFile, id };
+    const file: File = { 
+      id,
+      name: insertFile.name,
+      content: insertFile.content || "",
+      language: insertFile.language || "javascript",
+      path: insertFile.path
+    };
     this.files.set(id, file);
     return file;
   }
@@ -136,7 +142,11 @@ Use Emacs keybindings for efficient text editing:
   async updateSettings(settings: InsertEditorSettings): Promise<EditorSettings> {
     this.settings = {
       id: this.currentSettingsId,
-      ...settings
+      theme: settings.theme || "light",
+      fontSize: settings.fontSize || 14,
+      lineNumbers: settings.lineNumbers !== undefined ? settings.lineNumbers : true,
+      wordWrap: settings.wordWrap !== undefined ? settings.wordWrap : false,
+      emacsMode: settings.emacsMode !== undefined ? settings.emacsMode : true
     };
     return this.settings;
   }
