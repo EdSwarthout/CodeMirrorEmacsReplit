@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorView } from "codemirror";
 import { setupEditor } from "@/lib/codemirror-config";
 import type { File } from "@shared/schema";
@@ -19,33 +19,16 @@ export default function CodeEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const currentFileIdRef = useRef<number | null>(null);
-  const currentLanguageRef = useRef<string>("");
+  const lastFileIdRef = useRef<number | null>(null);
 
-  // Stable onChange callback to prevent unnecessary re-renders
-  const stableOnChange = useCallback((content: string) => {
-    onChange(content);
-  }, [onChange]);
-
-  const stableOnCursorChange = useCallback((line: number, col: number) => {
-    onCursorPositionChange(line, col);
-  }, [onCursorPositionChange]);
-
-  // Initialize or recreate editor only when file or language changes
   useEffect(() => {
     if (!editorRef.current) return;
-    
-    const isFileChange = currentFileIdRef.current !== file.id;
-    const isLanguageChange = currentLanguageRef.current !== language;
-    const needsRecreate = !viewRef.current || isFileChange || isLanguageChange;
+
+    // Only recreate if file changed or no editor exists
+    const needsRecreate = !viewRef.current || lastFileIdRef.current !== file.id;
 
     if (needsRecreate) {
-      // Store current cursor position if editor exists
-      let cursorPos = 0;
-      let hasFocus = false;
       if (viewRef.current) {
-        cursorPos = viewRef.current.state.selection.main.head;
-        hasFocus = viewRef.current.hasFocus;
         viewRef.current.destroy();
       }
 
@@ -53,27 +36,13 @@ export default function CodeEditor({
         parent: editorRef.current,
         doc: file.content,
         language,
-        onChange: stableOnChange,
-        onCursorChange: stableOnCursorChange,
+        onChange,
+        onCursorChange: onCursorPositionChange,
       });
 
       viewRef.current = view;
-      currentFileIdRef.current = file.id;
-      currentLanguageRef.current = language;
+      lastFileIdRef.current = file.id;
       setIsReady(true);
-
-      // Only restore cursor position if this was a language change for the same file
-      if (isLanguageChange && !isFileChange && hasFocus && cursorPos > 0) {
-        setTimeout(() => {
-          if (viewRef.current) {
-            const pos = Math.min(cursorPos, view.state.doc.length);
-            view.dispatch({
-              selection: { anchor: pos, head: pos },
-            });
-            view.focus();
-          }
-        }, 0);
-      }
     }
 
     return () => {
@@ -83,15 +52,14 @@ export default function CodeEditor({
         setIsReady(false);
       }
     };
-  }, [file.id, file.content, language, stableOnChange, stableOnCursorChange]);
+  }, [file.id, language]); // Only depend on file.id and language
 
-  // Update content when file content changes (but same file)
+  // Update content only for the same file
   useEffect(() => {
-    if (!viewRef.current || !isReady || currentFileIdRef.current !== file.id) return;
+    if (!viewRef.current || !isReady || lastFileIdRef.current !== file.id) return;
     
     const currentContent = viewRef.current.state.doc.toString();
     if (currentContent !== file.content) {
-      // Only update content without cursor changes - let CodeMirror handle cursor naturally
       viewRef.current.dispatch({
         changes: {
           from: 0,
