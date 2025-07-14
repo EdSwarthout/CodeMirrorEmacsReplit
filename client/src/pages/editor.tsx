@@ -9,7 +9,7 @@ import ErrorModal from "@/components/error-modal";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, FolderOpen, Save, Settings } from "lucide-react";
+import { FileText, FolderOpen, Save, Settings, Download } from "lucide-react";
 import { useEditor } from "@/hooks/use-editor";
 import type { File } from "@shared/schema";
 
@@ -86,6 +86,27 @@ export default function Editor() {
     return languageMap[ext] || 'javascript';
   };
 
+  const handleDownloadFile = () => {
+    if (!currentFile) return;
+    
+    // Create a blob with the file content
+    const blob = new Blob([currentFile.content], { type: 'text/plain' });
+    
+    // Create a download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = currentFile.name;
+    
+    // Trigger the download
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -123,6 +144,17 @@ export default function Editor() {
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadFile}
+                disabled={!currentFile}
+                className="text-gray-700 border-gray-300 hover:bg-gray-50"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
               </Button>
             </div>
           </div>
