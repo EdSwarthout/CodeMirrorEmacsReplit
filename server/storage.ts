@@ -17,9 +17,87 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private initialized = false;
+
   async getFiles(): Promise<File[]> {
     if (!db) throw new Error("Database not available");
+    
+    // Initialize sample files if database is empty
+    if (!this.initialized) {
+      await this.initializeIfEmpty();
+      this.initialized = true;
+    }
+    
     return await db.select().from(files);
+  }
+
+  private async initializeIfEmpty(): Promise<void> {
+    if (!db) return;
+    
+    const existingFiles = await db.select().from(files);
+    if (existingFiles.length === 0) {
+      // Create sample files
+      await this.createFile({
+        name: "index.js",
+        content: `// Welcome to CodeMirror Emacs Editor
+function greetUser(name) {
+    const message = \`Hello, \${name}!\`;
+    console.log(message);
+    return message;
+}
+
+// Example usage
+greetUser('World');`,
+        language: "javascript",
+        path: "/index.js"
+      });
+      
+      await this.createFile({
+        name: "styles.css",
+        content: `/* Sample CSS file */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9fafb;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}`,
+        language: "css",
+        path: "/styles.css"
+      });
+      
+      await this.createFile({
+        name: "sample.md",
+        content: `# CodeMirror Emacs Editor
+
+A powerful web-based code editor with Emacs keybindings.
+
+## Features
+
+- CodeMirror 6 integration
+- Emacs keybindings
+- Multiple language support
+- File management
+- Customizable settings
+
+## Usage
+
+Use Emacs keybindings for efficient text editing:
+- \`Ctrl+x Ctrl+s\` - Save file
+- \`Ctrl+x Ctrl+f\` - Open file
+- \`Ctrl+x k\` - Close file
+- \`Ctrl+g\` - Cancel operation`,
+        language: "markdown",
+        path: "/sample.md"
+      });
+      
+      console.log("[Storage] Initialized database with sample files");
+    }
   }
 
   async getFile(id: number): Promise<File | undefined> {
