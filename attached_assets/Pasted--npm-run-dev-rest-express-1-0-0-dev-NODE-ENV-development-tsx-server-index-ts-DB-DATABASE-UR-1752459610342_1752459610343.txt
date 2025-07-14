@@ -1,0 +1,125 @@
+$ npm run dev
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[DB] DATABASE_URL length: 47
+[DB] DATABASE_URL prefix: postgresql://pguser:pg7755xx@l...
+[DB] Parsed connection details:
+[DB]   Protocol: postgresql:
+[DB]   Hostname: localhost
+[DB]   Port: 5432
+[DB]   Database: /cm6
+[DB]   Username: pguser
+[DB] Creating connection pool...
+[DB] Initializing Drizzle ORM...
+[DB] Database initialization complete
+[Storage] Using DatabaseStorage (PostgreSQL)
+[DB] Connection test failed: connect ECONNREFUSED 127.0.0.1:443
+[DB] Error code: undefined
+[DB] Error errno: undefined
+[DB] Error syscall: undefined
+[DB] Error address: undefined
+[DB] Error port: undefined
+[DB] Full error object: {}
+9:18:11 PM [express] serving on port 5000
+[API] GET /api/files - Request received
+[API] Calling storage.getFiles()...
+[Storage] getFiles() called
+[Storage] Database available: true
+[Storage] Initializing database...
+[Storage] Error in getFiles(): ErrorEvent {
+  Symbol(kTarget): WebSocket {
+    _events: [Object: null prototype] {
+      error: [Function],
+      message: [Function],
+      close: [Function],
+      open: [Function]
+    },
+    _eventsCount: 4,
+    _maxListeners: undefined,
+    _binaryType: 'arraybuffer',
+    _closeCode: 1006,
+    _closeFrameReceived: false,
+    _closeFrameSent: false,
+    _closeMessage: <Buffer >,
+    _closeTimer: null,
+    _errorEmitted: true,
+    _extensions: {},
+    _paused: false,
+    _protocol: '',
+    _readyState: 3,
+    _receiver: null,
+    _sender: null,
+    _socket: null,
+    _bufferedAmount: 0,
+    _isServer: false,
+    _redirects: 0,
+    _autoPong: true,
+    _url: 'wss://localhost/v2',
+    _req: null,
+    Symbol(shapeMode): false,
+    Symbol(kCapture): false
+  },
+  Symbol(kType): 'error',
+  Symbol(kError): Error: connect ECONNREFUSED 127.0.0.1:443
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -111,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 443
+  },
+  Symbol(kMessage): 'connect ECONNREFUSED 127.0.0.1:443'
+}
+[Storage] Error type: object
+[Storage] Error message: Unknown error
+[Storage] Error stack: No stack trace
+[API] Error in GET /api/files: ErrorEvent {
+  Symbol(kTarget): WebSocket {
+    _events: [Object: null prototype] {
+      error: [Function],
+      message: [Function],
+      close: [Function],
+      open: [Function]
+    },
+    _eventsCount: 4,
+    _maxListeners: undefined,
+    _binaryType: 'arraybuffer',
+    _closeCode: 1006,
+    _closeFrameReceived: false,
+    _closeFrameSent: false,
+    _closeMessage: <Buffer >,
+    _closeTimer: null,
+    _errorEmitted: true,
+    _extensions: {},
+    _paused: false,
+    _protocol: '',
+    _readyState: 3,
+    _receiver: null,
+    _sender: null,
+    _socket: null,
+    _bufferedAmount: 0,
+    _isServer: false,
+    _redirects: 0,
+    _autoPong: true,
+    _url: 'wss://localhost/v2',
+    _req: null,
+    Symbol(shapeMode): false,
+    Symbol(kCapture): false
+  },
+  Symbol(kType): 'error',
+  Symbol(kError): Error: connect ECONNREFUSED 127.0.0.1:443
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -111,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 443
+  },
+  Symbol(kMessage): 'connect ECONNREFUSED 127.0.0.1:443'
+}
+[API] Error type: object
+[API] Error message: Unknown error
+[API] Error stack: No stack trace
+9:18:25 PM [express] GET /api/files 500 in 8ms :: {"message":"Failed to get files"}
