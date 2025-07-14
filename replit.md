@@ -134,5 +134,6 @@ Preferred communication style: Simple, everyday language.
 ### Database Setup
 - PostgreSQL schema defined in `shared/schema.ts`
 - Drizzle handles migrations and type generation
-- Fallback to in-memory storage for development
-- Connection pooling via Neon serverless adapter
+- Automatic adapter selection: Neon serverless for cloud, standard pg for local
+- Smart fallback to in-memory storage when no DATABASE_URL available
+- Sample files automatically created on first run when database is empty
