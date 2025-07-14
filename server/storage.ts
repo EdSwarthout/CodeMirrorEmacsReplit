@@ -20,15 +20,34 @@ export class DatabaseStorage implements IStorage {
   private initialized = false;
 
   async getFiles(): Promise<File[]> {
-    if (!db) throw new Error("Database not available");
+    console.log("[Storage] getFiles() called");
+    console.log("[Storage] Database available:", !!db);
     
-    // Initialize sample files if database is empty
-    if (!this.initialized) {
-      await this.initializeIfEmpty();
-      this.initialized = true;
+    if (!db) {
+      console.error("[Storage] Database not available");
+      throw new Error("Database not available");
     }
     
-    return await db.select().from(files);
+    try {
+      // Initialize sample files if database is empty
+      if (!this.initialized) {
+        console.log("[Storage] Initializing database...");
+        await this.initializeIfEmpty();
+        this.initialized = true;
+      }
+      
+      console.log("[Storage] Querying files table...");
+      const result = await db.select().from(files);
+      console.log("[Storage] Query successful, found", result.length, "files");
+      return result;
+      
+    } catch (error) {
+      console.error("[Storage] Error in getFiles():", error);
+      console.error("[Storage] Error type:", typeof error);
+      console.error("[Storage] Error message:", error instanceof Error ? error.message : 'Unknown error');
+      console.error("[Storage] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      throw error;
+    }
   }
 
   private async initializeIfEmpty(): Promise<void> {

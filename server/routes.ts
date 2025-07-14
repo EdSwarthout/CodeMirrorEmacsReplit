@@ -7,10 +7,17 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all files
   app.get("/api/files", async (req, res) => {
+    console.log("[API] GET /api/files - Request received");
     try {
+      console.log("[API] Calling storage.getFiles()...");
       const files = await storage.getFiles();
+      console.log("[API] Successfully retrieved", files.length, "files");
       res.json(files);
     } catch (error) {
+      console.error("[API] Error in GET /api/files:", error);
+      console.error("[API] Error type:", typeof error);
+      console.error("[API] Error message:", error instanceof Error ? error.message : 'Unknown error');
+      console.error("[API] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
       res.status(500).json({ message: "Failed to get files" });
     }
   });
